@@ -14,7 +14,7 @@ declare const inject: string[];
 declare const CODEX_SETTINGS_NAMESPACE = "codex-shim";
 interface Config {
   enabled: boolean;
-  /** Empty disables automatic matching; the bundle defaults to `gpt-5.6-*`. */
+  /** Empty disables automatic matching; the bundle defaults to GPT-5.6 and GPT-6 families. */
   modelPatterns: string[];
   modelOverrides: CodexModelOverride[];
 }

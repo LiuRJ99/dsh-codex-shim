@@ -20,7 +20,7 @@ vi.mock(
 const { CodexSettingsCardController } = await import('../src/client/settings-card-controller.ts')
 
 function fixture() {
-  let value: Record<string, unknown> = { enabled: true, modelPatterns: ['gpt-5.6-*'], modelOverrides: [] }
+  let value: Record<string, unknown> = { enabled: true, modelPatterns: ['gpt-5.6-*', 'gpt-6', 'gpt-6-*'], modelOverrides: [] }
   let user: Record<string, unknown> | undefined
   let unsubscribed = false
   const scope = {
@@ -78,7 +78,7 @@ describe('CodexSettingsCardController save and discard', () => {
     const { controller, getValue, wasUnsubscribed } = fixture()
     await new Promise(resolve => setTimeout(resolve, 0))
     expect(controller.getStore().get().models).toEqual([])
-    expect(controller.getStore().get().modelPatterns.text).toBe('gpt-5.6-*')
+    expect(controller.getStore().get().modelPatterns.text).toBe('gpt-5.6-*\ngpt-6\ngpt-6-*')
     expect(controller.getStore().get().modelPatterns.overridden).toBe(false)
 
     controller.addModelException('provider', 'model-a')

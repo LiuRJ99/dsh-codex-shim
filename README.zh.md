@@ -13,7 +13,7 @@
 #### 使用 `gh` 下载 Release tarball
 
 ```sh
-gh release download v0.1.2 --repo LiuRJ99/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
+gh release download v0.1.3 --repo LiuRJ99/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
 pnpm dsh --profile web --dump-config
 ```
@@ -21,24 +21,26 @@ pnpm dsh --profile web --dump-config
 没有 GitHub CLI 时，可用 `curl` 与 `jq` 下载同一个最新 Release 资产：
 
 ```sh
-curl -fsSL https://api.github.com/repos/LiuRJ99/dsh-codex-shim/releases/tags/v0.1.2 \
+curl -fsSL https://api.github.com/repos/LiuRJ99/dsh-codex-shim/releases/tags/v0.1.3 \
   | jq -r '.assets[] | select(.name | endswith(".tgz")) | .browser_download_url' \
   | xargs -r curl -fLO
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
 pnpm dsh --profile web --dump-config
 ```
 
-**如果内置的 `gpt-5.6-*` 规则已经够用，无需阅读下面两个关于配置的小节。**
+**如果内置的 GPT-5.6/GPT-6 规则已经够用，无需阅读下面两个关于配置的小节。**
 
 ### 通过配置文件配置
 
-通过 profile 的 settings provider 配置本插件。默认的文件 provider 使用 `$DSH_HOME/settings.yaml`（通常是 `~/.dsh/settings.yaml`）；在其中创建或编辑 `codex-shim:` 分节即可。在显式设置 `modelPatterns` 前，bundle 内置的 `gpt-5.6-*` 自动规则仍然生效。
+通过 profile 的 settings provider 配置本插件。默认的文件 provider 使用 `$DSH_HOME/settings.yaml`（通常是 `~/.dsh/settings.yaml`）；在其中创建或编辑 `codex-shim:` 分节即可。在显式设置 `modelPatterns` 前，bundle 内置的 `gpt-5.6-*`、`gpt-6` 和 `gpt-6-*` 自动规则仍然生效。
 
 ```yaml
 codex-shim:
   enabled: true
   modelPatterns:
     - gpt-5.6-*
+    - gpt-6
+    - gpt-6-*
     - deepseek-v4-*
   modelOverrides:
     - provider: openai
@@ -55,7 +57,7 @@ codex-shim:
 
 ### DSH 兼容性
 
-Release `v0.1.2` 已针对 DSH `0.1.5-rc.1` 的精确 commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e` 完成组合测试。该 DSH 版本通过正常的 settings client 路径暴露外部设置，因此不再需要源码 patch。客户端使用当前的 `ctx.settings.installSection`、`ctx.remote.session.modelCatalog()`、`tool.call.toolview` 和 `tool.call.images` 契约。
+Release `v0.1.3` 已针对 DSH `0.1.5-rc.1` 的精确 commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e` 完成组合测试。该 DSH 版本通过正常的 settings client 路径暴露外部设置，因此不再需要源码 patch。客户端使用当前的 `ctx.settings.installSection`、`ctx.remote.session.modelCatalog()`、`tool.call.toolview` 和 `tool.call.images` 契约。
 
 ### 卸载
 
@@ -76,7 +78,7 @@ bundle 会全局挂载 gate，但只有同时满足以下条件时才应用 Code
 - 当前模型匹配自动规则，或显式的 provider/model override 启用它；
 - 当前 scope 中至少存在一个 shim tool。
 
-默认自动规则是 `gpt-5.6-*`。用户可以改成 `deepseek-v4-*` 等规则，填入空列表关闭自动匹配，或使用显式 provider/model override。WebUI 设置页通过 DSH settings slot 提供相同配置。
+默认自动规则是 `gpt-5.6-*`、`gpt-6` 和 `gpt-6-*`。用户可以改成 `deepseek-v4-*` 等规则，填入空列表关闭自动匹配，或使用显式 provider/model override。WebUI 设置页通过 DSH settings slot 提供相同配置。
 
 ## Shim 工具
 

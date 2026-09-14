@@ -1,6 +1,6 @@
 {
   "name": "@opentritium/dsh-codex-shim",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Route-aware Codex environment simulation for DeepSeek Harness, improving tool-call reliability for GPT and other Codex-adapted models",
   "license": "MIT",
   "repository": {

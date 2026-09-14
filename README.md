@@ -13,7 +13,7 @@ The examples below install the bundle into the WebUI `web` profile. `dsh plugin`
 #### Download the Release tarball with `gh`
 
 ```sh
-gh release download v0.1.2 --repo LiuRJ99/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
+gh release download v0.1.3 --repo LiuRJ99/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
 pnpm dsh --profile web --dump-config
 ```
@@ -21,24 +21,26 @@ pnpm dsh --profile web --dump-config
 Without GitHub CLI, download the same latest-release asset with `curl` and `jq`:
 
 ```sh
-curl -fsSL https://api.github.com/repos/LiuRJ99/dsh-codex-shim/releases/tags/v0.1.2 \
+curl -fsSL https://api.github.com/repos/LiuRJ99/dsh-codex-shim/releases/tags/v0.1.3 \
   | jq -r '.assets[] | select(.name | endswith(".tgz")) | .browser_download_url' \
   | xargs -r curl -fLO
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
 pnpm dsh --profile web --dump-config
 ```
 
-**If the bundled `gpt-5.6-*` rule is enough, skip the configuration section below.**
+**If the bundled GPT-5.6/GPT-6 rules are enough, skip the configuration section below.**
 
 ### Configure through a configuration file
 
-Configure this plugin through the profile's settings provider. The default file-backed provider uses `$DSH_HOME/settings.yaml` (normally `~/.dsh/settings.yaml`); create or edit its `codex-shim:` section. The bundled `gpt-5.6-*` automatic rule remains in force until `modelPatterns` is explicitly set.
+Configure this plugin through the profile's settings provider. The default file-backed provider uses `$DSH_HOME/settings.yaml` (normally `~/.dsh/settings.yaml`); create or edit its `codex-shim:` section. The bundled `gpt-5.6-*`, `gpt-6`, and `gpt-6-*` automatic rules remain in force until `modelPatterns` is explicitly set.
 
 ```yaml
 codex-shim:
   enabled: true
   modelPatterns:
     - gpt-5.6-*
+    - gpt-6
+    - gpt-6-*
     - deepseek-v4-*
   modelOverrides:
     - provider: openai
@@ -55,7 +57,7 @@ The file-backed settings provider watches valid edits, so the route policy updat
 
 ### DSH compatibility
 
-Release `v0.1.2` is composition-tested against DSH `0.1.5-rc.1` at exact commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`. This DSH release exposes external settings through the normal settings client path, so no source patch is required. The client half uses the current `ctx.settings.installSection`, `ctx.remote.session.modelCatalog()`, `tool.call.toolview`, and `tool.call.images` contracts.
+Release `v0.1.3` is composition-tested against DSH `0.1.5-rc.1` at exact commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`. This DSH release exposes external settings through the normal settings client path, so no source patch is required. The client half uses the current `ctx.settings.installSection`, `ctx.remote.session.modelCatalog()`, `tool.call.toolview`, and `tool.call.images` contracts.
 
 ### Uninstall
 
@@ -76,7 +78,7 @@ The bundle mounts the gate globally, but the Codex surface is applied only when 
 - the resolved model matches an automatic pattern or an exact model override enables it;
 - the current scope contains at least one shim tool.
 
-The default automatic pattern is `gpt-5.6-*`. Users can replace it with patterns such as `deepseek-v4-*`, set it to an empty list to disable automatic matching, or use explicit provider/model overrides. The UI exposes the same settings through the DSH settings slot.
+The default automatic patterns are `gpt-5.6-*`, `gpt-6`, and `gpt-6-*`. Users can replace them with patterns such as `deepseek-v4-*`, set the list to empty to disable automatic matching, or use explicit provider/model overrides. The UI exposes the same settings through the DSH settings slot.
 
 ## Shim tools
 

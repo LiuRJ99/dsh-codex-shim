@@ -22,14 +22,14 @@ export const CODEX_SETTINGS_NAMESPACE = CODEX_SETTINGS_NS
 
 export interface Config {
   enabled: boolean
-  /** Empty disables automatic matching; the bundle defaults to `gpt-5.6-*`. */
+  /** Empty disables automatic matching; the bundle defaults to GPT-5.6 and GPT-6 families. */
   modelPatterns: string[]
   modelOverrides: CodexModelOverride[]
 }
 
 export const Config: z<Config> = z.object({
   enabled: z.boolean().default(true),
-  modelPatterns: z.array(z.string()).default(['gpt-5.6-*']),
+  modelPatterns: z.array(z.string()).default(['gpt-5.6-*', 'gpt-6', 'gpt-6-*']),
   modelOverrides: z.array(z.object({ provider: z.string(), model: z.string(), enabled: z.boolean() })).default([]),
 })
 
@@ -99,7 +99,7 @@ function compilePattern(pattern: string): ((model: string) => boolean) | undefin
     .split('*')
     .map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
     .join('.*')
-  const regex = new RegExp(source)
+  const regex = new RegExp(`^${source}$`)
   return model => regex.test(model)
 }
 
