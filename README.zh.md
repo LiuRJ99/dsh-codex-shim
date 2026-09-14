@@ -13,7 +13,7 @@
 #### 使用 `gh` 下载 Release tarball
 
 ```sh
-gh release download --repo OpenTritium/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
+gh release download v0.1.2 --repo LiuRJ99/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz'
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
 pnpm dsh --profile web --dump-config
 ```
@@ -21,7 +21,7 @@ pnpm dsh --profile web --dump-config
 没有 GitHub CLI 时，可用 `curl` 与 `jq` 下载同一个最新 Release 资产：
 
 ```sh
-curl -fsSL https://api.github.com/repos/OpenTritium/dsh-codex-shim/releases/latest \
+curl -fsSL https://api.github.com/repos/LiuRJ99/dsh-codex-shim/releases/tags/v0.1.2 \
   | jq -r '.assets[] | select(.name | endswith(".tgz")) | .browser_download_url' \
   | xargs -r curl -fLO
 pnpm dsh plugin --profile web add ./opentritium-dsh-codex-shim-*.tgz
@@ -53,42 +53,16 @@ codex-shim:
 
 文件 settings provider 会监听合法的配置修改，因此路由策略会热更新。如果 profile 使用其他 settings provider，应通过该 provider 配置同一个 namespace。
 
-### 补丁 WebUI 以提供可视化配置（可选）
+### DSH 兼容性
 
-DSH `47f943859bef60e4160492346772ded9b24f765a` 尚不能让外部 bundle 将 settings namespace 暴露给 WebUI。不需要设置卡时，只安装 tarball 并按上面的 `settings.yaml` 配置即可。若希望获得更好的 GUI 设置体验，对应 Release 会附带 `deepseek-harness-settings-client-exposure-47f9438.patch`：这是一个不包含 OpenTritium 或 Codex 行为的通用 WebUI settings 白名单扩展。
-
-只在该精确、干净的 DSH commit 上应用 patch，重建 DSH 后再安装 Release tarball：
-
-```sh
-gh release download --repo OpenTritium/dsh-codex-shim --pattern 'opentritium-dsh-codex-shim-*.tgz' --pattern 'deepseek-harness-settings-client-exposure-47f9438.patch'
-git clone https://github.com/deepseek-ai/deepseek-harness.git deepseek-harness
-cd deepseek-harness
-git checkout 47f943859bef60e4160492346772ded9b24f765a
-git apply --check ../deepseek-harness-settings-client-exposure-47f9438.patch
-git apply ../deepseek-harness-settings-client-exposure-47f9438.patch
-pnpm install && pnpm run build
-pnpm dsh plugin --profile web add ../opentritium-dsh-codex-shim-*.tgz
-pnpm dsh --profile web --dump-config
-```
-
-该 patch 为 settings owner 增加显式的 `expose: 'client'` 选项；不会加载本 bundle、添加 OpenTritium row 或改变模型/工具行为。不要对 dirty checkout 或其他 commit 应用它；应等待上游提供等价能力。
+Release `v0.1.2` 已针对 DSH `0.1.5-rc.1` 的精确 commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e` 完成组合测试。该 DSH 版本通过正常的 settings client 路径暴露外部设置，因此不再需要源码 patch。客户端使用当前的 `ctx.settings.installSection`、`ctx.remote.session.modelCatalog()`、`tool.call.toolview` 和 `tool.call.images` 契约。
 
 ### 卸载
 
-移除 bundle 不需要 DSH patch，并会恢复纯上游的 profile 组合：
+移除 bundle 会恢复纯 DSH profile 组合：
 
 ```sh
 pnpm dsh plugin --profile web remove @opentritium/dsh-codex-shim
-pnpm dsh --profile web --dump-config
-```
-
-若之前应用过可选的 WebUI patch，请先移除 bundle。只有确认没有其他本地外部 bundle 使用 `expose: 'client'` 时，才反向应用 patch：
-
-```sh
-pnpm dsh plugin --profile web remove @opentritium/dsh-codex-shim
-git apply --reverse --check ../deepseek-harness-settings-client-exposure-47f9438.patch
-git apply --reverse ../deepseek-harness-settings-client-exposure-47f9438.patch
-pnpm run build
 pnpm dsh --profile web --dump-config
 ```
 
@@ -156,10 +130,10 @@ shim 只消费 capability 定义，不实现或选择 provider。实际 provider
 
 | 组件             | 支持基线                                                                                                                                  |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| DeepSeek Harness | tarball 安装固定为 commit `47f943859bef60e4160492346772ded9b24f765a`（`0.1.0-rc.5`）。对应的 settings-client-exposure patch 是可选项，仅用于显示 WebUI 设置卡；不假定附近 commit 兼容。 |
-| DSH peers        | `@deepseek-ai/dsh-*` peer 目标为 `^0.1.0-rc.5`；Cordis 目标为 `^4.0.1`，避免安装第二个 Cordis runtime。                                   |
+| DeepSeek Harness | tarball 安装固定为 commit `183f08e9c6dde7e36cd2318eaee70b0da08fb35e`（`0.1.5-rc.1`）；不需要源码 patch。                                      |
+| DSH peers        | `@deepseek-ai/dsh-*` peer 目标为 `>=0.1.5-rc.1 <0.2.0`；Cordis 目标为 `^4.0.2`，避免安装第二个 Cordis runtime。                     |
 | Node.js          | `^22.19.0` 或 `>=24.0.0`。                                                                                                                |
-| React/WebUI      | React 18；浏览器代码使用 DSH 的 locale、settings、connection、runtime 和 slot API。                                                       |
+| React/WebUI      | React 18；浏览器代码使用 DSH 的 locale、settingsScope/settings、remote、renderer、conversation 和 slot API。                              |
 | Codex 参照       | `@openai/codex` / `codex-cli 0.147.0`，用于工具名、patch 行为和 app-server 产品参照。本包不声明完整 Codex runtime 或 wire protocol 兼容。 |
 
 每个 shim 版本都会针对表中的基线进行组合验证。升级 DSH 或 Codex 后，应重新检查工具 schema、prompt section、approval/sandbox 字段和 WebUI slot contract。
@@ -176,7 +150,7 @@ pnpm run bench
 
 发布包包含 `lib/`、`cordis.patch.yml`、两份 README 和许可证。persona 与 locale 源文件会在 `tsdown` 构建时打包。
 
-推送与 `package.json` 版本严格对应的 `vX.Y.Z` tag 会触发 GitHub Actions 发布流程。它会验证可选的源码集成、运行 `pnpm run check`，将打出的 tarball 和可选 GUI patch 附加到 GitHub Release，不会发布到 npm。
+推送与 `package.json` 版本严格对应的 `vX.Y.Z` tag 会触发 GitHub Actions 发布流程。它会验证固定的 DSH 源码集成、运行 `pnpm run check`，并将打出的 tarball 附加到 GitHub Release，不会发布到 npm。
 
 ## 许可证
 

@@ -1,13 +1,15 @@
 import { WebBlock } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { WebSourceView } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { WebRunSearchGroup } from '../web-run-presentation.ts'
 import css from './CodexToolRow.module.css'
+import { webBlockLabels } from './primitive-labels.ts'
 
-interface Props {
+interface Props extends PropsLocale<'codex'> {
   results: readonly WebRunSearchGroup[]
 }
 
-export function CodexWebSearches({ results }: Props) {
+export function CodexWebSearches({ results, t }: Props) {
   return (
     <div className={css.webSearches}>
       {results.map((result, index) => (
@@ -18,6 +20,7 @@ export function CodexWebSearches({ results }: Props) {
             answer={result.answer}
             sources={result.sources as WebSourceView[]}
             truncated={result.truncated}
+            labels={webBlockLabels(t)}
             className={css.webSearchCard}
           />
         </section>

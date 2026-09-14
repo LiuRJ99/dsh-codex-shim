@@ -10,11 +10,13 @@ const CLIENT_EXTERNALS = [
   'react-dom',
   'react-dom/client',
   '@deepseek-ai/cordis',
-  '@deepseek-ai/dsh-client-runtime/client',
+  '@deepseek-ai/dsh-api-remotes/client',
+  '@deepseek-ai/dsh-client-store',
+  '@deepseek-ai/dsh-client-ui-conversation/client',
   '@deepseek-ai/dsh-client-ui-slots',
   '@deepseek-ai/dsh-client-ui-primitives',
   '@deepseek-ai/dsh-client-ui-attachment',
-  '@deepseek-ai/dsh-client-web-react',
+  '@deepseek-ai/dsh-client-ui-tool/client',
 ]
 const VIRTUAL_CODEX_SHIM_PERSONA_PREFIX = '\0codex-shim-persona:'
 const VIRTUAL_CODEX_SHIM_CSS_PREFIX = '\0codex-shim-css:'

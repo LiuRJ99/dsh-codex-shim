@@ -6,7 +6,6 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent'
 import type { SandboxExecutionPolicy, SandboxMode } from '@deepseek-ai/dsh-sandbox'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
-import { settingsNamespace, installSettingsSection } from '@deepseek-ai/dsh-settings'
 import type { SettingsSectionHooks } from '@deepseek-ai/dsh-settings'
 import type {} from '@deepseek-ai/dsh-settings'
 import type { AssembleContext, PromptAssembly } from '@deepseek-ai/dsh-system-prompt'
@@ -19,17 +18,13 @@ import { CODEX_SETTINGS_NS, type CodexModelOverride } from './codex-settings.ts'
 export const name = 'opentritium-codex-gate'
 export const inject = ['systemPrompt', 'tools']
 
-export const CODEX_SETTINGS_NAMESPACE = settingsNamespace(CODEX_SETTINGS_NS)
+export const CODEX_SETTINGS_NAMESPACE = CODEX_SETTINGS_NS
 
 export interface Config {
   enabled: boolean
   /** Empty disables automatic matching; the bundle defaults to `gpt-5.6-*`. */
   modelPatterns: string[]
   modelOverrides: CodexModelOverride[]
-}
-
-interface ClientExposedSettingsHooks<T> extends SettingsSectionHooks<T> {
-  expose: 'client'
 }
 
 export const Config: z<Config> = z.object({
@@ -275,8 +270,7 @@ function escapeXml(text: string): string {
 export function apply(ctx: Context, config: Config): void {
   let source: () => Config = () => config
   const logger = ctx.logger('codex-gate')
-  const settingsHooks: ClientExposedSettingsHooks<Config> = {
-    expose: 'client',
+  const settingsHooks: SettingsSectionHooks<Config> = {
     validate: assertServiceableConfig,
     setSource: current => {
       source = current
@@ -291,7 +285,9 @@ export function apply(ctx: Context, config: Config): void {
       )
     },
   }
-  installSettingsSection(ctx, CODEX_SETTINGS_NAMESPACE, Config, config, settingsHooks)
+  ctx.inject(['settings'], settingsCtx => {
+    settingsCtx.settings.installSection(ctx, CODEX_SETTINGS_NAMESPACE, Config, config, settingsHooks)
+  })
 
   ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
     const assembled = await next()

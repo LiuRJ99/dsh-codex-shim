@@ -1,6 +1,8 @@
-import type { IApiClient, ModelProviderGroup } from '@deepseek-ai/dsh-client-connection/client'
-import type { SettingsScope, SnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientRemote, ModelProviderGroup } from '@deepseek-ai/dsh-api-remotes/client'
+import type { ModelCatalogFailure } from '@deepseek-ai/dsh-api-session-controller/types'
+import type { SnapshotStore } from '@deepseek-ai/dsh-client-store'
+import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { SettingsScope } from '@deepseek-ai/dsh-client-ui-settings/client'
 import { CODEX_SETTINGS_NS, modelRouteKey, type CodexModelOverride, type CodexSettings } from '../codex-settings.ts'
 
 export { CODEX_SETTINGS_NS }
@@ -125,7 +127,7 @@ export class CodexSettingsCardController {
 
   constructor(
     private readonly scope: SettingsScope<CodexSettings>,
-    private readonly api: Pick<IApiClient, 'llm'>,
+    private readonly remote: Pick<ClientRemote, 'session'>,
   ) {
     this.store = createSnapshotStore(this.snapshot())
     this.unsubscribe = scope.subscribe(() => this.publish())
@@ -204,13 +206,13 @@ export class CodexSettingsCardController {
 
   private async loadModels(): Promise<void> {
     try {
-      const response = await this.api.llm.models({})
-      if (!response.result.ok) throw new Error(response.result.error.message)
-      this.groups = response.result.value.groups
+      const response = await this.remote.session.modelCatalog()
+      if (!response.ok) throw new Error(response.error.message)
+      this.groups = [...response.value.groups]
       this.modelsStatus = 'ready'
       this.modelsError =
-        response.result.value.failures.length > 0
-          ? response.result.value.failures.map(failure => `${failure.name}: ${failure.message}`).join('; ')
+        response.value.failures.length > 0
+          ? response.value.failures.map((failure: ModelCatalogFailure) => `${failure.name}: ${failure.message}`).join('; ')
           : undefined
     } catch (error) {
       this.modelsStatus = 'error'

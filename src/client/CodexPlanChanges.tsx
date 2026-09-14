@@ -1,21 +1,11 @@
 import { useId, type ReactNode } from 'react'
-import type { ToolCallViewProps } from '@deepseek-ai/dsh-client-ui-tool/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import type { ConversationSnapshot, ToolCallBlock } from '@deepseek-ai/dsh-client-runtime/client'
-import {
-  changedPlanItems,
-  parsePlanPresentation,
-  type PlanItemPresentation,
-  type PlanPresentation,
-  type PlanStatus,
-} from './plan-presentation.ts'
+import type { PlanPresentation, PlanStatus } from './plan-presentation.ts'
 import css from './CodexToolRow.module.css'
 
 interface Props {
-  block: ToolCallBlock
   plan: PlanPresentation
   t: PropsLocale<'codex'>['t']
-  useSession: ToolCallViewProps['useSession']
 }
 
 function CompletedGlyph() {
@@ -75,44 +65,8 @@ function planStatusLabel(status: PlanStatus, t: Props['t']): string {
   }
 }
 
-interface PlanOccurrence {
-  callId: string
-  items: PlanItemPresentation[]
-}
-
-function collectPlanOccurrences(snapshot: ConversationSnapshot): PlanOccurrence[] {
-  const occurrences: PlanOccurrence[] = []
-  const seen = new Set<string>()
-  const visit = (candidate: ToolCallBlock): void => {
-    if (seen.has(candidate.callId)) return
-    seen.add(candidate.callId)
-    const name = 'kind' in candidate ? candidate.call?.name : candidate.name
-    const argsRaw = 'kind' in candidate ? (candidate.call?.argsRaw ?? '') : candidate.argsRaw
-    if (name === 'update_plan') {
-      const plan = parsePlanPresentation(argsRaw)
-      if (plan !== undefined) occurrences.push({ callId: candidate.callId, items: plan.items })
-    }
-    for (const child of candidate.subCalls) visit(child)
-  }
-  for (const node of snapshot.nodes) {
-    if (node.kind === 'tool-result') visit(node)
-  }
-  for (const call of snapshot.runningCalls) visit(call)
-  return occurrences
-}
-
-function relevantPlanItems(
-  snapshot: ConversationSnapshot,
-  callId: string,
-  current: PlanPresentation,
-): PlanItemPresentation[] {
-  const occurrences = collectPlanOccurrences(snapshot)
-  const index = occurrences.findIndex(item => item.callId === callId)
-  return changedPlanItems(current.items, index > 0 ? occurrences[index - 1]?.items : undefined)
-}
-
-export function CodexPlanChanges({ block, plan, t, useSession }: Props) {
-  const items = useSession(snapshot => relevantPlanItems(snapshot, block.callId, plan))
+export function CodexPlanChanges({ plan, t }: Props) {
+  const items = plan.items
   return (
     <section className={css.planCard} aria-label={t('row.plan')}>
       <span className={css.ioLabel}>{t('row.plan')}</span>

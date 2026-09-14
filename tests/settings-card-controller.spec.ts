@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock(
-  '@deepseek-ai/dsh-client-runtime/client',
+  '@deepseek-ai/dsh-client-store',
   () => ({
     createSnapshotStore: <T>(initial: T) => {
       let value = initial
@@ -41,20 +41,20 @@ function fixture() {
       user = nextUser
     },
   }
-  const api = {
-    llm: {
-      models: async () => ({
-        result: {
-          ok: true,
-          value: {
-            groups: [{ id: 'provider', name: 'Provider', models: [{ id: 'model-a', name: 'Model A' }] }],
-            failures: [],
-          },
+  const remote = {
+    session: {
+      modelCatalog: async () => ({
+        ok: true,
+        value: {
+          default: { provider: 'provider', model: 'model-a' },
+          routableProviders: ['provider'],
+          groups: [{ id: 'provider', name: 'Provider', models: [{ id: 'model-a', name: 'Model A' }] }],
+          failures: [],
         },
       }),
     },
   }
-  const controller = new CodexSettingsCardController(scope as never, api as never)
+  const controller = new CodexSettingsCardController(scope as never, remote as never)
   return { controller, getValue: () => value, wasUnsubscribed: () => unsubscribed }
 }
 

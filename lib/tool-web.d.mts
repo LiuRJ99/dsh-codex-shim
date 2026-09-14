@@ -1,6 +1,7 @@
 import z from "@deepseek-ai/schemastery";
-import { JsonValue, ToolResult, WebSearchResultView } from "@deepseek-ai/dsh-tools";
+import { ToolResult, WebSearchResultView } from "@deepseek-ai/dsh-tools";
 import { Context } from "@deepseek-ai/cordis";
+import { JsonValue } from "@deepseek-ai/dsh-util-values";
 
 //#region src/web-run-presentation.d.ts
 interface WebRunSource {

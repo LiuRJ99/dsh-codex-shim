@@ -4,8 +4,8 @@ import type { Context } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-tools'
-import type { TodoItem } from '@deepseek-ai/dsh-session'
-import type {} from '@deepseek-ai/dsh-session'
+import type { TodoItem } from '@deepseek-ai/dsh-tool-todo'
+import type {} from '@deepseek-ai/dsh-tool-todo'
 
 export const name = 'opentritium-codex-plan'
 

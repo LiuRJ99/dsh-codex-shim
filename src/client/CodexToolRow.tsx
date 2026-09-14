@@ -1,6 +1,5 @@
 import { useState, type ReactNode } from 'react'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
-import { MessageImage } from '@deepseek-ai/dsh-client-ui-attachment'
 import {
   DiffBlock,
   DisclosureRow,
@@ -16,17 +15,22 @@ import {
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { DiffHunk, WebSourceView } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ToolCallViewProps } from '@deepseek-ai/dsh-client-ui-tool/client'
-import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
-import type { ToolCallBlock } from '@deepseek-ai/dsh-client-runtime/client'
+import type { PropsLocale, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
+import type { ToolCallBlock } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import { parsePatch } from '../apply-patch.ts'
+import { diffsFromMeta } from '../patch-diff.ts'
 import css from './CodexToolRow.module.css'
 import { CodexPlanChanges } from './CodexPlanChanges.tsx'
 import { CodexWebSearches } from './CodexWebSearches.tsx'
 import { parsePlanPresentation } from './plan-presentation.ts'
+import { diffBlockLabels, webBlockLabels } from './primitive-labels.ts'
 import { splitTerminalOutput } from './terminal-output.ts'
 import { parseWebRunView } from '../web-run-presentation.ts'
 
-type CodexToolRowProps = ToolCallViewProps & PropsLocale<'codex'>
-type ImageLoader = (attachment: ImageAttachmentRef) => Promise<string>
+type CodexToolRowProps = ToolCallViewProps &
+  PropsLocale<'codex'> & {
+    renderSlot?: PropsRenderSlots<'tool.call.images'>['renderSlot']
+  }
 type CodexRowState = 'running' | 'ok' | 'error' | 'stopped'
 
 function firstLine(value: string): string {
@@ -59,10 +63,24 @@ function imageSize(bytes: number): string {
 }
 
 function patchDiffs(block: ToolCallBlock): DiffHunk[] | null {
-  if (!('kind' in block)) {
-    return block.callView?.card === 'diff' ? block.callView.diffs : null
+  if ('kind' in block) {
+    return diffsFromMeta(block.meta) ?? null
   }
-  return block.resultView?.card === 'diff' ? block.resultView.diffs : null
+  const args = objectArgs(block.argsRaw)
+  const input = args?.input
+  if (typeof input !== 'string') return null
+  try {
+    const parsed = parsePatch(input)
+    const diffs = parsed.ops.flatMap<DiffHunk>(op => {
+      if (op.kind === 'add') return [{ path: op.path, oldText: null, newText: op.lines.map(line => `${line}\n`).join('') }]
+      if (op.kind === 'delete') return []
+      const path = op.moveTo ?? op.path
+      return op.chunks.map(chunk => ({ path, oldText: chunk.oldLines.join('\n'), newText: chunk.newLines.join('\n') }))
+    })
+    return diffs.length === 0 ? null : diffs
+  } catch {
+    return null
+  }
 }
 
 function contentLineCount(text: string | null): number {
@@ -218,9 +236,9 @@ export function CodexToolRow({
   block,
   inspect,
   t,
-  imageLoader,
-  useSession,
-}: CodexToolRowProps & { imageLoader?: ImageLoader }) {
+  renderSlot,
+  loadImage,
+}: CodexToolRowProps) {
   const [expanded, setExpanded] = useState(false)
   const state = rowState(block)
   const argsRaw = argsOf(block)
@@ -234,7 +252,7 @@ export function CodexToolRow({
   const workdir = toolName === 'exec_command' ? stringArg(args, 'workdir') : undefined
   const diff = toolName === 'apply_patch' ? patchDiffs(block) : null
   const plan = toolName === 'update_plan' ? parsePlanPresentation(argsRaw) : undefined
-  const web = toolName === 'web_run' && 'kind' in block ? parseWebRunView(block.resultView) : undefined
+  const web = toolName === 'web_run' && 'kind' in block ? parseWebRunView(block.meta) : undefined
   const showRawPanels = toolName !== 'view_image' && plan === undefined && web === undefined
   const expandable =
     diff !== null ||
@@ -272,7 +290,7 @@ export function CodexToolRow({
         }
       >
         <div className={css.bodyWrap}>
-          {diff !== null ? <DiffBlock diffs={diff} maxLines={8} /> : null}
+          {diff !== null ? <DiffBlock diffs={diff} labels={diffBlockLabels(t)} maxLines={8} /> : null}
           {diff === null && terminalOutput !== null && toolName === 'exec_command' && command !== undefined ? (
             <section className={css.ioCard} data-stream="command" aria-label={t('row.command')}>
               <span className={css.ioLabel}>{t('row.command')}</span>
@@ -316,23 +334,11 @@ export function CodexToolRow({
               </pre>
             </section>
           ) : null}
-          {diff === null && image !== undefined && imageLoader !== undefined ? (
+          {diff === null && image !== undefined ? (
             <section className={css.imageCard} aria-label={t('row.imagePreview')}>
               <span className={css.ioLabel}>{t('row.image')}</span>
               <div className={css.imageContent}>
-                <MessageImage
-                  attachment={image}
-                  load={imageLoader}
-                  variant="single"
-                  labels={{
-                    image: t('row.image'),
-                    open: t('row.imageOpen'),
-                    openNamed: (label: string) => t('row.imageOpenNamed', { label }),
-                    loading: t('row.imageLoading'),
-                    loadFailed: t('row.imageLoadFailed'),
-                    lightbox: { dialog: t('row.imagePreview'), close: t('row.imageClose') },
-                  }}
-                />
+                {renderSlot?.('tool.call.images', { images: [{ attachment: image }], loadImage, align: 'start' })}
                 <dl className={css.imageMeta}>
                   <div>
                     <dt>{t('row.imageFile')}</dt>
@@ -362,12 +368,13 @@ export function CodexToolRow({
               answer={web.answer}
               sources={web.sources as WebSourceView[]}
               truncated={web.truncated}
+              labels={webBlockLabels(t)}
               className={css.webBody}
             />
           ) : null}
-          {diff === null && web?.kind === 'searches' ? <CodexWebSearches results={web.results} /> : null}
+          {diff === null && web?.kind === 'searches' ? <CodexWebSearches results={web.results} t={t} /> : null}
           {diff === null && plan !== undefined ? (
-            <CodexPlanChanges block={block} plan={plan} t={t} useSession={useSession} />
+            <CodexPlanChanges plan={plan} t={t} />
           ) : null}
           {inspect !== undefined ? (
             <button type="button" className={css.inspectButton} onClick={inspect}>

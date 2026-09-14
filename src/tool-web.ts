@@ -9,7 +9,8 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { JsonValue, ToolResult, WebSearchResultView } from '@deepseek-ai/dsh-tools'
+import type { ToolResult, WebSearchResultView } from '@deepseek-ai/dsh-tools'
+import type { JsonValue } from '@deepseek-ai/dsh-util-values'
 import type { WebSearchResult, WebSearchSource } from '@deepseek-ai/dsh-web'
 import {
   parseWebRunMeta,

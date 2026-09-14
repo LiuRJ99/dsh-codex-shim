@@ -6,6 +6,7 @@ import {
   Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type {} from '@deepseek-ai/dsh-client-ui-settings-plugins/client'
 import type {
   CodexSettingsCardController,
   CodexSettingsState,
@@ -15,7 +16,7 @@ import css from './CodexSettingsCard.module.css'
 import { modelRouteKey } from '../codex-settings.ts'
 
 export interface CodexSettingsCardFace {
-  hooks: { codexSettings: import('@deepseek-ai/dsh-client-runtime/client').SnapshotStore<CodexSettingsState> }
+  hooks: { codexSettings: import('@deepseek-ai/dsh-client-store').SnapshotStore<CodexSettingsState> }
   edit: (field: 'enabled' | 'modelPatterns', text: string) => void
   setModelDecision: (provider: string, model: string, decision: ModelOverrideDecision) => void
   addModelException: (provider: string, model: string) => void

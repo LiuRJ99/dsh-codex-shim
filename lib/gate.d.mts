@@ -11,7 +11,7 @@ interface CodexModelOverride {
 //#region src/gate.d.ts
 declare const name = "opentritium-codex-gate";
 declare const inject: string[];
-declare const CODEX_SETTINGS_NAMESPACE: import("@deepseek-ai/dsh-settings").SettingsNamespace;
+declare const CODEX_SETTINGS_NAMESPACE = "codex-shim";
 interface Config {
   enabled: boolean;
   /** Empty disables automatic matching; the bundle defaults to `gpt-5.6-*`. */
